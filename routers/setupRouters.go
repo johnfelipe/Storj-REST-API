@@ -31,8 +31,8 @@ func SetupRouters() {
 
 	router.HandleFunc("/api/users/{id}/access", user.GenerateUserAccessGrant).Methods("GET")
 	router.HandleFunc("/api/users/{id}/list", user.List).Methods("GET")
-	router.HandleFunc("/api/users/{id}/upload", user.Upload).Methods("POST")
-	router.HandleFunc("/api/users/{id}/uploads", user.Uploads).Methods("POST")
+	router.HandleFunc("/api/users/{id}/upload/identity", user.UploadIdentity).Methods("POST")
+	router.HandleFunc("/api/users/{id}/upload/record", user.UploadRecord).Methods("POST")
 	router.HandleFunc("/api/users/{id}/download", user.Download).Methods("GET")
 	router.HandleFunc("/api/users/{id}/downloads", user.Downloads).Methods("GET")
 	router.HandleFunc("/api/users/{id}/update", user.Update).Methods("PUT")

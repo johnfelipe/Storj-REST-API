@@ -12,19 +12,13 @@ type ReqListObjects struct {
 type ReqUploadObjectIdentity struct {
 	UserAccessGrant string `json:"userAccessGrant"`
 	ObjectKey string `json:"objectKey"`
-	Identity Identity `json:"identity"`
+	Data Identity `json:"identity"`
 }
 
 type ReqUploadObjectRecord struct {
 	UserAccessGrant string `json:"userAccessGrant"`
 	ObjectKey string `json:"objectKey"`
-	Record Record `json:"record"`
-}
-
-type ReqUploadObjectRecords struct {
-	UserAccessGrant string `json:"userAccessGrant"`
-	ObjectKey string `json:"objectKey"`
-	Record []Record `json:"record"`
+	Data Record `json:"record"`
 }
 
 type ReqDownloadObject struct {

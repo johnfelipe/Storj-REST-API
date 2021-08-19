@@ -85,36 +85,32 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func GenerateUserAccessGrant(w http.ResponseWriter, r *http.Request) {
-	// fmt.Fprintf(w, "from GenerateUserAccessGrant()")
-	fmt.Println("from GenerateUserAccessGrant()")
 
-	// set the header to content type x-www-form-urlencoded
-	// allow all origin to handle cors issue
 	w.Header().Set("Context-Type", "application/x-www-form-urlencoded")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-
+	
 	// Get User Request Data
-	var req resources.UserAccessRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil  {
+	var newUser resources.ReqNewUser
+	if err := json.NewDecoder(r.Body).Decode(&newUser); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 	defer r.Body.Close()
-
+	
+	// Get User from database
 	params := mux.Vars(r)
-	var user models.DappUser 
+	var user models.DappUser
 	database.Db.First(&user, params["id"])
-
+	
 	// Create a user access grant for accessing their files
 	now := time.Now()
 	permission := uplink.FullPermission()
-
-	// 2 minutes leeway to avoid time sync issues with the satellite
-	permission.NotBefore = now.Add(-2 * time.Minute)
-	userPrefix := uplink.SharePrefix{Bucket: "app", Prefix: user.EthereumAddress + "/" }
+	
+	// 2 minutes leeway to avoid time sync issues with the statellite
+	permission.NotBefore = now.Add( -2 * time.Minute )
+	userPrefix := uplink.SharePrefix{Bucket: "app",  Prefix: user.EthereumAddress + "/"}
 	
 	// Get App Access Grant
 	appAccessStr := os.Getenv("APPACCESS")
@@ -122,7 +118,7 @@ func GenerateUserAccessGrant(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-
+	
 	userAccess, err := appAccess.Share(permission, userPrefix)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -138,32 +134,20 @@ func GenerateUserAccessGrant(w http.ResponseWriter, r *http.Request) {
 	userSalt := make([]byte, 16)
 	rand.Read(userSalt)
 
-	// userAccess, err = uplink.ParseAccess(serializedAccess)
-	// if err != nil {
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// }
-
-	saltedUserKey, err := uplink.DeriveEncryptionKey(req.UserPassphrase, userSalt)
+	saltedUserKey, err := uplink.DeriveEncryptionKey(newUser.UserPassphrase, userSalt)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	
 	err = userAccess.OverrideEncryptionKey("app", user.EthereumAddress + "/", saltedUserKey)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
-
-	// serializedAccess, err = userAccess.Serialize()
-	// if err != nil {
-	// 	http.Error(w, err.Error(), http.StatusBadRequest)
-	// }
-
-	newUser := resources.GeneratedUser {UserAccessGrant: serializedAccess, UserSalt: userSalt}
-
 	
-	// w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(newUser)
-	fmt.Println( "app/" + user.EthereumAddress + "/")
+	resUser := resources.ResNewUser{UserAccessGrant: serializedAccess, UserSalt: string(userSalt)}
+	if err := json.NewEncoder(w).Encode(&resUser); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	
 }
 

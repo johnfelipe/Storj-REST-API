@@ -9,3 +9,17 @@ type ResListObjects struct {
 	Objects []string `json:"objects"`
 }
 
+// response format
+type Response struct {
+    ID      uint  `json:"id,omitempty"`
+    Message string `json:"message,omitempty"`
+}
+
+
+type Unauthorized struct {
+	Message string 
+}
+
+type TokenCreated struct {
+	Message string
+}

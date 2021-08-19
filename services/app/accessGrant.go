@@ -34,8 +34,6 @@ func AccessGrant(ctx context.Context, satelliteAddress, apiKey, appPassPhrase st
 			return err
 		}
 	} 
-	
-	
 
 	// Create an access grant for reading bucket "app"
 	permission := uplink.FullPermission()
