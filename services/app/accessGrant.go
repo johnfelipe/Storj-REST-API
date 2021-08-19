@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 
@@ -14,8 +15,30 @@ func AccessGrant(ctx context.Context, satelliteAddress, apiKey, appPassPhrase st
 		return err 
 	}
 
+	project, err := uplink.OpenProject(ctx, access)
+	if err != nil {
+		fmt.Println("here")
+		return err
+	}
+
+	// Ensure bucket 
+	_, err = project.EnsureBucket(ctx, "app")
+	if err != nil {
+		// fmt.Println("here")
+		// fmt.Println("error : ", err)
+		// return err
+		// Create app bucket	
+		_, err = project.CreateBucket(ctx, "app")
+		if err != nil {
+			fmt.Println("here")
+			return err
+		}
+	} 
+	
+	
+
 	// Create an access grant for reading bucket "app"
-	permission := uplink.ReadOnlyPermission()
+	permission := uplink.FullPermission()
 	shared := uplink.SharePrefix{Bucket: "app"}
 	restrictedAccess, err := access.Share(permission, shared)
 
@@ -28,7 +51,7 @@ func AccessGrant(ctx context.Context, satelliteAddress, apiKey, appPassPhrase st
 	if err != nil {
 		return err
 	}
-	// fmt.Println(serializedAccess)
+	fmt.Println(serializedAccess)
 
 	os.Setenv("APPACCESS", serializedAccess)
 	log.Println("Successfully generated app acess grant for the app bucket")

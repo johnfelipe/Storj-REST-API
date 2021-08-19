@@ -1,14 +1,18 @@
 package user
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/mohammedfajer/Storj-REST-API/database"
 	"github.com/mohammedfajer/Storj-REST-API/models"
 	"github.com/mohammedfajer/Storj-REST-API/resources"
+	"storj.io/uplink"
 )
 
 func CreateUser(w http.ResponseWriter, r *http.Request) {
@@ -48,7 +52,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	
 	// format a resposnse object
 	res := resources.Response{
-			ID:      user.EthereumAddress,
+			ID:      user.ID,
 			Message: "User created successfully",
 	}
 	
@@ -62,8 +66,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	var users models.DappUser 
 	database.Db.First(&users, params["id"])
-	database.Db.Delete(&users)
-
+	database.Db.Delete(&users, users.ID)
 	json.NewEncoder(w).Encode(&users)
 }
 
@@ -82,6 +85,85 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func GenerateUserAccessGrant(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "from GenerateUserAccessGrant()")
+	// fmt.Fprintf(w, "from GenerateUserAccessGrant()")
+	fmt.Println("from GenerateUserAccessGrant()")
+
+	// set the header to content type x-www-form-urlencoded
+	// allow all origin to handle cors issue
+	w.Header().Set("Context-Type", "application/x-www-form-urlencoded")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	// Get User Request Data
+	var req resources.UserAccessRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil  {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+	defer r.Body.Close()
+
+	params := mux.Vars(r)
+	var user models.DappUser 
+	database.Db.First(&user, params["id"])
+
+	// Create a user access grant for accessing their files
+	now := time.Now()
+	permission := uplink.FullPermission()
+
+	// 2 minutes leeway to avoid time sync issues with the satellite
+	permission.NotBefore = now.Add(-2 * time.Minute)
+	userPrefix := uplink.SharePrefix{Bucket: "app", Prefix: user.EthereumAddress + "/" }
+	
+	// Get App Access Grant
+	appAccessStr := os.Getenv("APPACCESS")
+	appAccess, err := uplink.ParseAccess(appAccessStr)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	userAccess, err := appAccess.Share(permission, userPrefix)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	// serialize the user access grant
+	serializedAccess, err := userAccess.Serialize()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	// Generate User Salt
+	userSalt := make([]byte, 16)
+	rand.Read(userSalt)
+
+	// userAccess, err = uplink.ParseAccess(serializedAccess)
+	// if err != nil {
+	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+	// }
+
+	saltedUserKey, err := uplink.DeriveEncryptionKey(req.UserPassphrase, userSalt)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	
+	err = userAccess.OverrideEncryptionKey("app", user.EthereumAddress + "/", saltedUserKey)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+
+	// serializedAccess, err = userAccess.Serialize()
+	// if err != nil {
+	// 	http.Error(w, err.Error(), http.StatusBadRequest)
+	// }
+
+	newUser := resources.GeneratedUser {UserAccessGrant: serializedAccess, UserSalt: userSalt}
+
+	
+	// w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(newUser)
+	fmt.Println( "app/" + user.EthereumAddress + "/")
 }
 

@@ -2,6 +2,6 @@ package resources
 
 // response format
 type Response struct {
-    ID      string  `json:"id,omitempty"`
+    ID      uint  `json:"id,omitempty"`
     Message string `json:"message,omitempty"`
 }
