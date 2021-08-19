@@ -28,6 +28,6 @@ type ReqDownloadObject struct {
 
 type ReqDownloadObjects struct {
 	UserAccessGrant string `json:"userAccessGrant"`
-	ObjectKey []string `json:"objectKey"`
+	ObjectKeys []string `json:"objectKeys"`
 }
 

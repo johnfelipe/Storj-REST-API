@@ -3,7 +3,6 @@ package user
 import (
 	"bytes"
 	"context"
-	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -54,17 +53,13 @@ func UploadIdentity(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	var network bytes.Buffer        // Stand-in for a network connection
-  	enc := gob.NewEncoder(&network) // Will write to network.
-	// Encode (send) the value.
-	err = enc.Encode(req.Data)
+
+	d, err := json.Marshal(req.Data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-
-	// Copy the data to the upload.
-	d := network.Bytes()
-	buf := bytes.NewBuffer(d)
+	buf := bytes.NewBuffer([]byte(string(d)))
 	_, err = io.Copy(upload, buf)
 	if err != nil {
 		_ = upload.Abort()
@@ -124,24 +119,7 @@ func UploadRecord(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	// var network bytes.Buffer        // Stand-in for a network connection
-  	// enc := gob.NewEncoder(&network) // Will write to network.
-	// // Encode (send) the value.
-
-	// // Strut to Json to String
-	// b, err := json.Marshal(req.Data)
-	// if err != nil {
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	return
-	// }
-
-	// err = enc.Encode(string(b))
-	// if err != nil {
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// }
-
-	// // Copy the data to the upload.
-	// d := network.Bytes()
+	
 
 	
 	d, err := json.Marshal(req.Data)
