@@ -31,3 +31,29 @@ type ReqDownloadObjects struct {
 	ObjectKeys []string `json:"objectKeys"`
 }
 
+type ReqDeleteObject struct {
+	UserAccessGrant string `json:"userAccessGrant"`
+	ObjectKey string `json:"objectKey"`
+}
+
+type ReqDeleteObjects struct {
+	UserAccessGrant string `json:"userAccessGrant"`
+	ObjectKeys []string `json:"objectKeys"`
+}
+
+type ReqShareObject struct {
+	UserAccessGrant string `json:"userAccessGrant"`
+	ObjectPrefix string `json:"objectPrefix"`
+	PermissionType string `json:"permissionType"`
+}
+
+type ReqShareObjects struct {
+	UserAccessGrant string `json:"userAccessGrant"`
+	ObjectsPrefix []string `json:"objectsPrefix"`
+	PermissionType string `json:"permissionType"`
+}
+
+type ReqRevokeAccess struct {
+	UserAccessGrant string `json:"userAccessGrant"`
+	AccessGrant string `json:"accessGrant"`
+}

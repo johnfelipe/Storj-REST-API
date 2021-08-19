@@ -23,3 +23,12 @@ type Unauthorized struct {
 type TokenCreated struct {
 	Message string
 }
+
+type SuccessMessage struct {
+	Message string
+}
+
+type AccessGrant struct {
+	Grant string `json:"grant"`
+}
+

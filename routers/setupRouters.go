@@ -41,7 +41,7 @@ func SetupRouters() {
 	router.HandleFunc("/api/users/{id}/share", user.Share).Methods("GET")
 	router.HandleFunc("/api/users/{id}/shares", user.Shares).Methods("GET")
 	router.HandleFunc("/api/users/{id}/revoke", user.RevokeGrant).Methods("POST")
-	router.HandleFunc("/api/users/{id}/revokes", user.RevokeGrants).Methods("POST")
+	// router.HandleFunc("/api/users/{id}/revokes", user.RevokeGrants).Methods("POST")
 
 	// router.HandleFunc("/api/users/{id}", user.GenerateUserAccessGrant).Methods("GET")
 	// router.HandleFunc("/api/users/{id}/lists", user.List).Methods("GET")
