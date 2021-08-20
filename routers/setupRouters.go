@@ -21,9 +21,6 @@ func SetupRouters() {
 	router.Handle("/api/home", middlewares.IsAuthorized(iam.Home) )
 	router.Handle("/api/refresh", middlewares.IsAuthorized(iam.Refresh))
 
-	// router.HandleFunc("/api/home", )
-	// router.HandleFunc("/api/refresh", iam.Refresh)
-
 	router.HandleFunc("/api/users", user.GetUsers).Methods("GET")
 	router.HandleFunc("/api/users/{id}", user.GetUser).Methods("GET")
 	router.HandleFunc("/api/users", user.CreateUser).Methods("POST")
@@ -41,18 +38,7 @@ func SetupRouters() {
 	router.HandleFunc("/api/users/{id}/share", user.Share).Methods("GET")
 	router.HandleFunc("/api/users/{id}/shares", user.Shares).Methods("GET")
 	router.HandleFunc("/api/users/{id}/revoke", user.RevokeGrant).Methods("POST")
-	// router.HandleFunc("/api/users/{id}/revokes", user.RevokeGrants).Methods("POST")
-
-	// router.HandleFunc("/api/users/{id}", user.GenerateUserAccessGrant).Methods("GET")
-	// router.HandleFunc("/api/users/{id}/lists", user.List).Methods("GET")
-	// router.HandleFunc("/api/users/{id}/downloads", user.Download).Methods("GET")
-	// router.HandleFunc("/api/users/{id}/shares", user.Grant).Methods("GET")
 	
-	// router.HandleFunc("/api/users/{id}/uploads", user.Upload).Methods("POST")
-	// router.HandleFunc("/api/users/{id}/revokes", user.Revoke).Methods("POST")
-	// router.HandleFunc("/api/users/{id}/deletes", user.Delete).Methods("DELETE")
-
-
 	fmt.Println("\t* Running on http://localhost:8000/ (Prese CTRL+C to quit) ")
 	log.Fatal(http.ListenAndServe(":8000", router))
 }

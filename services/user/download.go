@@ -3,92 +3,18 @@ package user
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/mohammedfajer/Storj-REST-API/database"
+	"github.com/mohammedfajer/Storj-REST-API/helpers"
 	"github.com/mohammedfajer/Storj-REST-API/models"
 	"github.com/mohammedfajer/Storj-REST-API/resources"
-	"storj.io/uplink"
 )
 
 
-func downloadIdentity(ctx context.Context, req resources.ReqDownloadObject, user models.DappUser) (resources.Identity, error) {
 
-	var data resources.Identity
-
-	// Parse The access grant
-	userAccess, err := uplink.ParseAccess(req.UserAccessGrant)
-	if err != nil {
-		return resources.Identity{}, err 
-	}
-
-	// Open up the project we will be working with
-	project, err := uplink.OpenProject(ctx, userAccess)
-	if err != nil {
-		return resources.Identity{}, err 
-	}
-	defer project.Close()
-
-	// Intitiate the upload of our Object to the specified bucket and key.
-	key := (user.EthereumAddress + req.ObjectKey)
-	// Initiate a download of the same object again
-	download, err := project.DownloadObject(ctx, "app", key, nil)
-	if err != nil {
-		return resources.Identity{}, err 
-	}
-	defer download.Close()
-
-	// Read everything from the download stream
-	receivedContents, err := ioutil.ReadAll(download)
-	if err != nil {
-		return resources.Identity{}, err 
-	}
-
-	json.Unmarshal(receivedContents, &data)
-	
-	return data, nil
-}
-
-
-func downloadRecord(ctx context.Context, req resources.ReqDownloadObject, user models.DappUser) (resources.Record, error) {
-
-	var data resources.Record
-
-	// Parse The access grant
-	userAccess, err := uplink.ParseAccess(req.UserAccessGrant)
-	if err != nil {
-		return resources.Record{}, err 
-	}
-
-	// Open up the project we will be working with
-	project, err := uplink.OpenProject(ctx, userAccess)
-	if err != nil {
-		return resources.Record{}, err 
-	}
-	defer project.Close()
-
-	// Intitiate the upload of our Object to the specified bucket and key.
-	key := (user.EthereumAddress + req.ObjectKey)
-	// Initiate a download of the same object again
-	download, err := project.DownloadObject(ctx, "app", key, nil)
-	if err != nil {
-		return resources.Record{}, err 
-	}
-	defer download.Close()
-
-	// Read everything from the download stream
-	receivedContents, err := ioutil.ReadAll(download)
-	if err != nil {
-		return resources.Record{}, err 
-	}
-
-	json.Unmarshal(receivedContents, &data)
-	
-	return data, nil
-}
 
 func Download(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
@@ -109,7 +35,7 @@ func Download(w http.ResponseWriter, r *http.Request) {
 	// String to json
 	result := strings.Contains(req.ObjectKey, "identity")
 	if result {
-		data, err := downloadIdentity(ctx, req, user)
+		data, err := helpers.DownloadIdentity(ctx, req, user)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -118,7 +44,7 @@ func Download(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	} else {
-		data, err := downloadRecord(ctx, req, user)
+		data, err := helpers.DownloadRecord(ctx, req, user)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -153,14 +79,14 @@ func Downloads(w http.ResponseWriter, r *http.Request) {
 		// String to json
 		result := strings.Contains(req.ObjectKeys[i], "identity")
 		if result {
-			data, err := downloadIdentity(ctx, resources.ReqDownloadObject{UserAccessGrant: req.UserAccessGrant, ObjectKey: req.ObjectKeys[i]}, user)
+			data, err := helpers.DownloadIdentity(ctx, resources.ReqDownloadObject{UserAccessGrant: req.UserAccessGrant, ObjectKey: req.ObjectKeys[i]}, user)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 			identites = append(identites, data)
 		} else {
-			data, err := downloadRecord(ctx, resources.ReqDownloadObject{UserAccessGrant: req.UserAccessGrant, ObjectKey: req.ObjectKeys[i]}, user)
+			data, err := helpers.DownloadRecord(ctx, resources.ReqDownloadObject{UserAccessGrant: req.UserAccessGrant, ObjectKey: req.ObjectKeys[i]}, user)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return

@@ -57,3 +57,9 @@ type ReqRevokeAccess struct {
 	UserAccessGrant string `json:"userAccessGrant"`
 	AccessGrant string `json:"accessGrant"`
 }
+
+type ReqUpdateObject struct {
+	UserAccessGrant string `json:"userAccessGrant"`
+	ObjectKey string `json:"objectKey"`
+	Data Record `json:"record"`
+}
