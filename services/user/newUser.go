@@ -18,7 +18,7 @@ import (
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("from CreateUser()")
-	
+
 	// set the header to content type x-www-form-urlencoded
 	// allow all origin to handle cors issue
 	w.Header().Set("Context-Type", "application/x-www-form-urlencoded")
@@ -26,21 +26,20 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Methods", "POST")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	
-	
+
 	// create an empty user of type models.DappUser
 	var user models.DappUser
-	
+
 	// decode the json request to user
 	err := json.NewDecoder(r.Body).Decode(&user)
-	
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	fmt.Println(user)
-	
+
 	// Check user in database
 	// insert user in the database
 	createdUser := database.Db.Create(&user)
@@ -48,23 +47,23 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
-	} 
-	
+	}
+
 	// format a resposnse object
 	res := resources.Response{
-			ID:      user.ID,
-			Message: "User created successfully",
+		ID:      user.ID,
+		Message: "User created successfully",
 	}
-	
+
 	// send the response
 	json.NewEncoder(w).Encode(res)
-	
+
 }
 
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	params := mux.Vars(r)
-	var users models.DappUser 
+	var users models.DappUser
 	database.Db.First(&users, params["id"])
 	database.Db.Delete(&users, users.ID)
 	json.NewEncoder(w).Encode(&users)
@@ -79,7 +78,7 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 func GetUser(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
-	var user models.DappUser 
+	var user models.DappUser
 	database.Db.First(&user, params["id"])
 	json.NewEncoder(w).Encode(user)
 }
@@ -91,34 +90,34 @@ func GenerateUserAccessGrant(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Methods", "GET")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	
+
 	// Get User Request Data
 	var newUser resources.ReqNewUser
 	if err := json.NewDecoder(r.Body).Decode(&newUser); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 	defer r.Body.Close()
-	
+
 	// Get User from database
 	params := mux.Vars(r)
 	var user models.DappUser
 	database.Db.First(&user, params["id"])
-	
+
 	// Create a user access grant for accessing their files
 	now := time.Now()
-	permission := uplink.FullPermission()
-	
+	permission := uplink.ReadOnlyPermission() // WAS full access
+
 	// 2 minutes leeway to avoid time sync issues with the statellite
-	permission.NotBefore = now.Add( -2 * time.Minute )
-	userPrefix := uplink.SharePrefix{Bucket: "app",  Prefix: user.EthereumAddress + "/"}
-	
+	permission.NotBefore = now.Add(-2 * time.Minute)
+	userPrefix := uplink.SharePrefix{Bucket: "app", Prefix: user.EthereumAddress + "/"}
+
 	// Get App Access Grant
 	appAccessStr := os.Getenv("APPACCESS")
 	appAccess, err := uplink.ParseAccess(appAccessStr)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	
+
 	userAccess, err := appAccess.Share(permission, userPrefix)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -139,15 +138,14 @@ func GenerateUserAccessGrant(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	err = userAccess.OverrideEncryptionKey("app", user.EthereumAddress + "/", saltedUserKey)
+	err = userAccess.OverrideEncryptionKey("app", user.EthereumAddress+"/", saltedUserKey)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
-	
+
 	resUser := resources.ResNewUser{UserAccessGrant: serializedAccess, UserSalt: string(userSalt)}
 	if err := json.NewEncoder(w).Encode(&resUser); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	
-}
 
+}

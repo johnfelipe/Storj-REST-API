@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/mohammedfajer/Storj-REST-API/jwtToken"
 )
 
 var jwtKey = []byte(os.Getenv("JWTKEY"))
@@ -39,3 +40,31 @@ func IsAuthorized(endpoint func(http.ResponseWriter, *http.Request)) http.Handle
 	})
 }
 
+
+func IsAuthorized2(endpoint func(http.ResponseWriter, *http.Request)) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		// Verify Token
+		cookie, err := r.Cookie("access_token")
+		if err != nil {
+			if err == http.ErrNoCookie {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		tokenStr := cookie.Value
+
+		// ? Verify Token
+		httpStatusCode, _, err := jwtToken.VerifyToken(tokenStr)
+		if err != nil {
+			w.WriteHeader(httpStatusCode)
+			return 
+		}
+
+		endpoint(w, r)
+
+	})
+}

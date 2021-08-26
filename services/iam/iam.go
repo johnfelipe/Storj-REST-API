@@ -3,20 +3,21 @@ package iam
 import (
 	"fmt"
 	"net/http"
-	"os"
-	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 	"github.com/mohammedfajer/Storj-REST-API/database"
+	"github.com/mohammedfajer/Storj-REST-API/jwtToken"
 	"github.com/mohammedfajer/Storj-REST-API/models"
 	"github.com/mohammedfajer/Storj-REST-API/resources"
 )
 
-var jwtKey = []byte(os.Getenv("JWTKEY"))
+// 1. Generate Access Token
+// 2. Generate Refresh Token
+// 3. Verify Token
+
 
 func Login(w http.ResponseWriter, r *http.Request) {
-	// fmt.Fprintf(w, "from Login()")
 
 	fmt.Println("from Login()")
 
@@ -27,15 +28,20 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	var user models.DappUser 
 	database.Db.First(&user, params["id"])
-	// json.NewEncoder(w).Encode(user)
 
+	// Validate the user is already registered
 	if user.EthereumAddress == "" {
 		w.WriteHeader(http.StatusUnauthorized)
-		// json.NewEncoder(w).Encode(resources.Unauthorized{Message: "User is not registered"})
 		return 
 	}
 
-	expirationTime := time.Now().Add(time.Minute * 5)
+	// ? Generate Access Token
+	accessTokenStr, expirationTime, err := jwtToken.GenerateAccessToken(user.EthereumAddress)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return 
+	}
+
 	claims := &resources.Claims{
 		EthereumAddress: user.EthereumAddress,
 		StandardClaims: jwt.StandardClaims{
@@ -43,31 +49,41 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-   	
-	tokenString, err := token.SignedString(jwtKey)
+	// ? Generate new refresh token
+	refreshTokenStr, expirationTime , err := jwtToken.GenerateRefreshToken(claims)
 	if err != nil {
-		// w.WriteHeader(http.StatusInternalServerError)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		// json.NewEncoder(w).Encode(resources.Unauthorized{Message: "Token is invalid"})
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	// ? Associate Refresh Token with User
+	database.Db.Model(&user).Association("RefreshToken").Append(&models.RefreshToken{RefreshToken: refreshTokenStr})
  
 	http.SetCookie(w, &http.Cookie{
-		Name: "token",
-		Value: tokenString,
+		Name: "access_token",
+		Value: accessTokenStr,
 		Expires: expirationTime,
 		Path: "/",
 	})
 
-	// json.NewEncoder(w).Encode(resources.TokenCreated{Message: "Token is created check your cookies"})
+	http.SetCookie(w, 
+		&http.Cookie{
+		Name: "refresh_token",
+		Value: refreshTokenStr,
+		Expires: expirationTime,
+		Path: "/",
+		HttpOnly: true,
+		Secure: true,
+		SameSite: http.SameSiteStrictMode,
+	})
+
 }
 
 func Home(w http.ResponseWriter, r *http.Request) {
-	// fmt.Fprintf(w, "from Home()")
+	
 	fmt.Println("from Home()")
 
-	cookie, err := r.Cookie("token")
+	cookie, err := r.Cookie("access_token")
 	
 	if err != nil {
 		fmt.Println(err)
@@ -83,25 +99,10 @@ func Home(w http.ResponseWriter, r *http.Request) {
 
 	tokenStr := cookie.Value
 
-	claims := &resources.Claims{}
-
-	tkn, err := jwt.ParseWithClaims(tokenStr, claims,
-		func(t *jwt.Token) (interface{}, error) {
-			return jwtKey, nil
-		})
-
+	// ? Verify Token
+	httpStatusCode, claims, err := jwtToken.VerifyToken(tokenStr)
 	if err != nil {
-		if err == jwt.ErrSignatureInvalid {
-			w.WriteHeader(http.StatusUnauthorized)
-			return 
-		}
-		fmt.Println("error: ", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return 
-	}
-
-	if !tkn.Valid {
-		w.WriteHeader(http.StatusUnauthorized)
+		w.WriteHeader(httpStatusCode)
 		return
 	}
 
@@ -109,9 +110,13 @@ func Home(w http.ResponseWriter, r *http.Request) {
 }
 
 func Refresh(w http.ResponseWriter, r *http.Request) {
-	// fmt.Fprintf(w, "from Refresh()")
 
-	cookie, err := r.Cookie("token")
+	params := mux.Vars(r)
+
+	var user models.DappUser 
+	database.Db.First(&user, params["id"])
+	
+	cookie, err := r.Cookie("access_token")
 	if err != nil {
 		if err == http.ErrNoCookie {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -123,54 +128,53 @@ func Refresh(w http.ResponseWriter, r *http.Request) {
 
 	tokenStr := cookie.Value
 
-	claims := &resources.Claims{}
-
-	tkn, err := jwt.ParseWithClaims(tokenStr, claims,
-		func(t *jwt.Token) (interface{}, error) {
-			return jwtKey, nil
-		})
-
+	// ? Verify Token
+	httpStatusCode, claims, err := jwtToken.VerifyToken(tokenStr)
 	if err != nil {
-		if err == jwt.ErrSignatureInvalid {
-			w.WriteHeader(http.StatusUnauthorized)
-			return 
-		}
-
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(httpStatusCode)
 		return 
 	}
 
-	if !tkn.Valid {
+	// ? verify token from the database storing the refresh_tokens associated with each user.
+	var refreshToken models.RefreshToken
+	database.Db.Model(&user).Association("RefreshToken").Find(&refreshToken)
+
+	if refreshToken.UserID == user.ID {
+
+		// ? Generate Access Token
+		accessTokenStr, expirationTime, err := jwtToken.GenerateAccessToken(user.EthereumAddress)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return 
+		}
+
+		// ? Generate Refresh Token
+		tokenStr, expirationTime , err := jwtToken.GenerateRefreshToken(claims)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		http.SetCookie(w, &http.Cookie{
+			Name: "access_token",
+			Value: accessTokenStr,
+			Expires: expirationTime,
+			Path: "/",
+		})
+		
+		http.SetCookie(w, 
+			&http.Cookie{
+			Name: "refresh_token",
+			Value: tokenStr,
+			Expires: expirationTime,
+			Path: "/",
+			HttpOnly: true,
+			Secure: true,
+			SameSite: http.SameSiteStrictMode,
+		})
+	} else {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-
-	// if time.Unix(claims.ExpiresAt, 0).Sub(time.Now())  > 30 * time.Second {
-	// 	w.WriteHeader(http.StatusBadRequest)
-	// 	return
-	// }
-
-	expirationTime := time.Now().Add(time.Minute * 5)
-	claims.ExpiresAt = expirationTime.Unix()
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString(jwtKey)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	http.SetCookie(w, 
-		&http.Cookie{
-		Name: "token",
-		Value: tokenString,
-		Expires: expirationTime,
-		Path: "/",
-	})
 }
 
-func Register(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "from Register()")
-
-	
-}

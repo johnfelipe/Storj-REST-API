@@ -58,7 +58,6 @@ func Deletes(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-
 	// Get User from database
 	params := mux.Vars(r)
 	var user models.DappUser 
