@@ -49,7 +49,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// format a resposnse object
+	// format a response object
 	res := resources.Response{
 		ID:      user.ID,
 		Message: "User created successfully",

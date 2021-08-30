@@ -17,13 +17,13 @@ func DownloadIdentity(ctx context.Context, req resources.ReqDownloadObject, user
 	// Parse The access grant
 	userAccess, err := uplink.ParseAccess(req.UserAccessGrant)
 	if err != nil {
-		return resources.Identity{}, err 
+		return resources.Identity{}, err
 	}
 
 	// Open up the project we will be working with
 	project, err := uplink.OpenProject(ctx, userAccess)
 	if err != nil {
-		return resources.Identity{}, err 
+		return resources.Identity{}, err
 	}
 	defer project.Close()
 
@@ -31,22 +31,22 @@ func DownloadIdentity(ctx context.Context, req resources.ReqDownloadObject, user
 	key := (user.EthereumAddress + req.ObjectKey)
 	// Initiate a download of the same object again
 	download, err := project.DownloadObject(ctx, "app", key, nil)
+
 	if err != nil {
-		return resources.Identity{}, err 
+		return resources.Identity{}, err
 	}
 	defer download.Close()
 
 	// Read everything from the download stream
 	receivedContents, err := ioutil.ReadAll(download)
 	if err != nil {
-		return resources.Identity{}, err 
+		return resources.Identity{}, err
 	}
 
 	json.Unmarshal(receivedContents, &data)
-	
+
 	return data, nil
 }
-
 
 func DownloadRecord(ctx context.Context, req resources.ReqDownloadObject, user models.DappUser) (resources.Record, error) {
 
@@ -55,13 +55,13 @@ func DownloadRecord(ctx context.Context, req resources.ReqDownloadObject, user m
 	// Parse The access grant
 	userAccess, err := uplink.ParseAccess(req.UserAccessGrant)
 	if err != nil {
-		return resources.Record{}, err 
+		return resources.Record{}, err
 	}
 
 	// Open up the project we will be working with
 	project, err := uplink.OpenProject(ctx, userAccess)
 	if err != nil {
-		return resources.Record{}, err 
+		return resources.Record{}, err
 	}
 	defer project.Close()
 
@@ -70,17 +70,17 @@ func DownloadRecord(ctx context.Context, req resources.ReqDownloadObject, user m
 	// Initiate a download of the same object again
 	download, err := project.DownloadObject(ctx, "app", key, nil)
 	if err != nil {
-		return resources.Record{}, err 
+		return resources.Record{}, err
 	}
 	defer download.Close()
 
 	// Read everything from the download stream
 	receivedContents, err := ioutil.ReadAll(download)
 	if err != nil {
-		return resources.Record{}, err 
+		return resources.Record{}, err
 	}
 
 	json.Unmarshal(receivedContents, &data)
-	
+
 	return data, nil
 }

@@ -11,9 +11,8 @@ import (
 	"storj.io/uplink"
 )
 
-
 func UploadIdentity(ctx context.Context, req resources.ReqUploadObjectIdentity, user models.DappUser) error {
-	
+
 	// Parse The access grant
 	userAccess, err := uplink.ParseAccess(req.UserAccessGrant)
 	if err != nil {
@@ -27,9 +26,9 @@ func UploadIdentity(ctx context.Context, req resources.ReqUploadObjectIdentity, 
 	}
 	defer project.Close()
 
-	// Intitiate the upload of our Object to the specified bucket and key.
+	// Initiates the upload of our Object to the specified bucket and key.
 	key := (user.EthereumAddress + req.ObjectKey)
-	upload, err := project.UploadObject(ctx, "app", key , nil)
+	upload, err := project.UploadObject(ctx, "app", key, nil)
 	if err != nil {
 		return err
 	}
@@ -48,15 +47,14 @@ func UploadIdentity(ctx context.Context, req resources.ReqUploadObjectIdentity, 
 	// Commit the uploaded object.
 	err = upload.Commit()
 	if err != nil {
-		return nil
+		return err
 	}
 
 	return nil
 }
 
-
 func UploadRecord(ctx context.Context, req resources.ReqUploadObjectRecord, user models.DappUser) error {
-	
+
 	// Parse The access grant
 	userAccess, err := uplink.ParseAccess(req.UserAccessGrant)
 	if err != nil {
@@ -70,9 +68,9 @@ func UploadRecord(ctx context.Context, req resources.ReqUploadObjectRecord, user
 	}
 	defer project.Close()
 
-	// Intitiate the upload of our Object to the specified bucket and key.
+	// Initiate the upload of our Object to the specified bucket and key.
 	key := (user.EthereumAddress + req.ObjectKey)
-	upload, err := project.UploadObject(ctx, "app", key , nil)
+	upload, err := project.UploadObject(ctx, "app", key, nil)
 	if err != nil {
 		return err
 	}
@@ -91,7 +89,7 @@ func UploadRecord(ctx context.Context, req resources.ReqUploadObjectRecord, user
 	// Commit the uploaded object.
 	err = upload.Commit()
 	if err != nil {
-		return nil
+		return err
 	}
 
 	return nil
