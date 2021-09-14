@@ -1,6 +1,18 @@
 # Storj-REST-API
 
-<img src="https://github.com/mohammedfajer/Storj-REST-API/blob/main/2021-09-14%2017-08-49.gif"/>
+
+<p align="center">
+   <img src="https://github.com/mohammedfajer/Storj-REST-API/blob/main/golang_img.jpeg" width="50%"/> <br>
+  <b>Storj RESTful API in golang. Core Dependenies: </b><br>
+  <a href="https://storj.io/">Storj Network</a> |
+  <a href="https://pkg.go.dev/storj.io/uplink">Uplink Library (Golang)</a> |
+  <a href="https://github.com/mohammedfajer/EHRethChain">Accompanying Web Application (EHRethchain)</a>
+  <br><br>
+   
+ <img src="https://github.com/mohammedfajer/Storj-REST-API/blob/main/2021-09-14%2017-08-49.gif"/>
+</p>
+
+
 
 
 © 2020/2021 The University of Manchester and Mohammed Akram Fajer
@@ -77,7 +89,7 @@ $ postgres=# CREATE DATABASE dapp_users;
 $ postgres=# \q
 ```
 
-6. Run golang 
+6. Run API localhost server 
 
 ```
 $ go run main.go 
