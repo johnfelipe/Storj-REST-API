@@ -4,18 +4,18 @@
 Youtube Demo Video (Click on the image to view video) or via link https://www.youtube.com/watch?v=TI9b3nxaX9U
 
 
- [![EHRethChain](https://github.com/mohammedfajer/EHRethChain/blob/main/Screenshot%202021-09-14%20at%2023.55.54.png)](https://www.youtube.com/watch?v=TI9b3nxaX9U)
+ [![EHRethChain](https://github.com/johnfelipe/EHRethChain/blob/main/Screenshot%202021-09-14%20at%2023.55.54.png)](https://www.youtube.com/watch?v=TI9b3nxaX9U)
  
 
 <p align="center">
-   <img src="https://github.com/mohammedfajer/Storj-REST-API/blob/main/golang_img.jpeg" width="50%"/> <br>
+   <img src="https://github.com/johnfelipe/Storj-REST-API/blob/main/golang_img.jpeg" width="50%"/> <br>
   <b>Storj RESTful API in golang. Core Dependenies: </b><br>
   <a href="https://storj.io/">Storj Network</a> |
   <a href="https://pkg.go.dev/storj.io/uplink">Uplink Library (Golang)</a> |
-  <a href="https://github.com/mohammedfajer/EHRethChain">Accompanying Web Application (EHRethchain)</a>
+  <a href="https://github.com/johnfelipe/EHRethChain">Accompanying Web Application (EHRethchain)</a>
   <br><br>
    
- <img src="https://github.com/mohammedfajer/Storj-REST-API/blob/main/2021-09-14%2017-08-49.gif"/>
+ <img src="https://github.com/johnfelipe/Storj-REST-API/blob/main/2021-09-14%2017-08-49.gif"/>
 </p>
 
 
